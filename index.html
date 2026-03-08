@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entraînements Moussien</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #eef2ff;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 1rem;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        header { background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; padding: 1rem 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .header-flex { display: flex; flex-direction: column; gap: 1rem; }
+        @media (min-width: 768px) { .header-flex { flex-direction: row; align-items: center; justify-content: space-between; } }
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-weight: 800; font-size: 1.25rem; color: var(--text); }
+        .logo svg { color: var(--primary); }
+        .nav { display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: 0.75rem; gap: 0.25rem; overflow-x: auto; scrollbar-width: none; }
+        .nav::-webkit-scrollbar { display: none; }
+        .nav-btn { border: none; background: transparent; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; color: var(--text-muted); white-space: nowrap; transition: all 0.2s; }
+        .nav-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        .filters-bar { background: #fff; border-bottom: 1px solid var(--border); padding: 1rem 0; }
+        .filters-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        @media (min-width: 768px) { .filters-grid { grid-template-columns: 2fr 1.5fr 1.5fr auto; align-items: end; } }
+        .f-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .f-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; display: flex; justify-content: space-between; }
+        .f-input { padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 0.6rem; font-size: 0.9rem; outline: none; background: #fcfcfd; }
+        .f-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        .cat-bar { display: flex; gap: 0.5rem; overflow-x: auto; padding: 1rem 0; scrollbar-width: none; }
+        .cat-bar::-webkit-scrollbar { display: none; }
+        .cat-btn { border: 1px solid var(--border); background: #fff; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; padding: 2rem 0; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -5px rgba(0,0,0,0.1); border-color: #c7d2fe; }
+        .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; width: fit-content; }
+        .b-vma { background: #fee2e2; color: #b91c1c; }
+        .b-seuil { background: #fef3c7; color: #b45309; }
+        .b-endurance { background: #d1fae5; color: #047857; }
+        .b-mixte { background: #f1f5f9; color: #475569; }
+        .card-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.3; color: #1e293b; }
+        .card-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+        .m-box { background: #f8fafc; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #f1f5f9; }
+        .m-label { font-size: 0.6rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.2rem; }
+        .m-val { font-size: 0.9rem; font-weight: 800; color: var(--primary); font-family: ui-monospace, monospace; }
+        .card-steps { font-size: 0.85rem; color: #475569; display: flex; flex-direction: column; gap: 0.4rem; }
+        .step { display: flex; align-items: flex-start; gap: 0.6rem; }
+        .dot { width: 6px; height: 6px; background: #cbd5e1; border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0; }
+        
+        /* Modal */
+        .modal-bg { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+        .modal { background: #fff; border-radius: 1.5rem; width: 100%; max-width: 640px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .modal-h { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; background: #fafafa; }
+        .modal-b { padding: 2rem; overflow-y: auto; flex: 1; }
+        .modal-f { padding: 1.25rem 2rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; background: #fafafa; }
+        .close { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #64748b; }
+        
+        /* Calculators */
+        .calc-layout { display: grid; grid-template-columns: 1fr; gap: 2rem; padding: 2rem 0; }
+        @media (min-width: 1024px) { .calc-layout { grid-template-columns: 320px 1fr; } }
+        .side { display: flex; flex-direction: column; gap: 1.5rem; }
+        .box { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+        .box-h { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1.25rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem; }
+        .i-group { margin-bottom: 1.25rem; }
+        .i-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); margin-bottom: 0.4rem; display: block; text-transform: uppercase; }
+        .i-wrap { position: relative; }
+        .i-field { width: 100%; padding: 0.75rem 1rem; background: #f8fafc; border: 1px solid transparent; border-radius: 0.75rem; font-size: 1.1rem; font-weight: 700; font-family: ui-monospace, monospace; outline: none; transition: all 0.2s; }
+        .i-field:focus { background: #fff; border-color: var(--primary); }
+        .i-unit { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 0.65rem; font-weight: 800; color: #94a3b8; }
+        .row { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; }
+        .row:last-child { border: none; }
+        .row-l { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+        .row-v { font-weight: 800; font-family: ui-monospace, monospace; color: #1e293b; }
+        
+        .main-calc { display: flex; flex-direction: column; gap: 1.5rem; }
+        .table-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { text-align: left; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        .table td { padding: 1rem 0.75rem; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; }
+        .table tr:last-child td { border: none; }
+        .btn-p { background: #f1f5f9; border: none; padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+        .btn-p.active { background: var(--primary); color: #fff; }
+        
+        /* Bike Chart */
+        .chart { height: 300px; width: 100%; margin-top: 1.5rem; border-left: 2px solid #e2e8f0; border-bottom: 2px solid #e2e8f0; position: relative; }
+        .chart-line { fill: none; stroke: var(--primary); stroke-width: 3; stroke-linecap: round; }
+        .chart-area { fill: rgba(79, 70, 229, 0.05); }
+        .chart-dot { fill: var(--primary); stroke: #fff; stroke-width: 2; cursor: crosshair; transition: r 0.2s; }
+        .chart-dot:hover { r: 8; }
+        .chart-label { font-size: 10px; font-weight: 700; fill: #94a3b8; }
+        
+        #chart-tooltip { position: fixed; display: none; background: rgba(15, 23, 42, 0.9); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; pointer-events: none; z-index: 2000; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        .hidden { display: none !important; }
+        .no-scroll { overflow: hidden; }
+        input[type=range] { accent-color: var(--primary); cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-flex">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 12h-5"/><path d="M5.8 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M10.3 15H18"/><path d="M10.3 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M15 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M5.8 15H10.3"/><path d="M2 12h5.8"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M20 12h2"/><path d="M19 5l-2.1 2.1"/><path d="M7.1 16.9L5 19"/><path d="M5 5l2.1 2.1"/><path d="M16.9 16.9L19 19"/></svg>
+                <span>ENTRAÎNEMENTS MOUSSIEN</span>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-v="run">Running</button>
+                <button class="nav-btn" data-v="bike">Vélo</button>
+                <button class="nav-btn" data-v="r-calc">RunCalc</button>
+                <button class="nav-btn" data-v="b-calc">BikeCalc</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Running View -->
+        <div id="v-run" class="view">
+            <div class="filters-bar">
+                <div class="filters-grid">
+                    <div class="f-group">
+                        <label class="f-label">Rechercher</label>
+                        <input type="text" id="run-q" class="f-input" placeholder="Titre, étape...">
+                    </div>
+                    <div class="f-group">
+                        <label class="f-label">Distance Max <span id="dist-txt">10.0 km</span></label>
+                        <input type="range" id="run-d" min="1000" max="15000" step="500" value="10000">
+                    </div>
+                    <div class="f-group">
+                        <label class="f-label">Temps Max <span id="time-txt">90 min</span></label>
+                        <input type="range" id="run-t" min="20" max="120" step="5" value="90">
+                    </div>
+                    <button id="run-reset" class="btn-p" style="padding: 0.6rem 1.25rem;">Reset</button>
+                </div>
+                <div class="cat-bar" id="run-cats">
+                    <button class="cat-btn active" data-c="Tous">Tous</button>
+                    <button class="cat-btn" data-c="VMA">VMA</button>
+                    <button class="cat-btn" data-c="Seuil">Seuil</button>
+                    <button class="cat-btn" data-c="Endurance">Endurance</button>
+                    <button class="cat-btn" data-c="Mixte">Mixte</button>
+                </div>
+                <div class="cat-bar" id="run-specials" style="padding-top: 0;">
+                    <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 0.5rem;">PHARES:</span>
+                    <button class="cat-btn" data-s="Mona">MONA</button>
+                    <button class="cat-btn" data-s="4x4">4x4 Norvégien</button>
+                    <button class="cat-btn" data-s="Sisyphus">Sisyphus</button>
+                </div>
+            </div>
+            <div class="grid" id="run-grid"></div>
+        </div>
+
+        <!-- Cycling View -->
+        <div id="v-bike" class="view hidden">
+            <div class="filters-bar">
+                <div class="container" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                    <div class="cat-bar" id="bike-cats" style="padding: 0;">
+                        <button class="cat-btn active" data-c="Tous">Tous</button>
+                        <button class="cat-btn" data-c="Vélocité">Vélocité</button>
+                        <button class="cat-btn" data-c="Force">Force</button>
+                        <button class="cat-btn" data-c="PMA">PMA</button>
+                        <button class="cat-btn" data-c="Seuil">Seuil</button>
+                        <button class="cat-btn" data-c="Anaérobie">Anaérobie</button>
+                        <button class="cat-btn" data-c="FTP">FTP</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.4rem 1rem; border-radius: 2rem; border: 1px solid var(--border);">
+                        <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Ma FTP :</span>
+                        <input type="number" id="bike-ftp" style="width: 50px; border: none; background: transparent; font-weight: 800; font-family: ui-monospace, monospace; outline: none; color: var(--primary); text-align: center; font-size: 0.9rem;" value="230">
+                        <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted);">W</span>
+                    </div>
+                </div>
+            </div>
+            <div class="grid" id="bike-grid"></div>
+        </div>
+
+        <!-- RunCalc View -->
+        <div id="v-r-calc" class="view hidden">
+            <div class="calc-layout">
+                <div class="side">
+                    <div class="box">
+                        <h2 class="box-h">Profil Coureur</h2>
+                        <div class="i-group">
+                            <label class="i-label">Age</label>
+                            <div class="i-wrap"><input type="number" id="rc-age" class="i-field" value="62"><span class="i-unit">ANS</span></div>
+                        </div>
+                        <div class="i-group">
+                            <label class="i-label">FC Repos</label>
+                            <div class="i-wrap"><input type="number" id="rc-rhr" class="i-field" value="52"><span class="i-unit">BPM</span></div>
+                        </div>
+                        <div class="i-group">
+                            <label class="i-label">VMA (km/h)</label>
+                            <div class="i-wrap"><input type="number" step="0.1" id="rc-vma" class="i-field" value="13.4"></div>
+                        </div>
+                    </div>
+                    <div class="box">
+                        <h2 class="box-h">Zones Cardiaques</h2>
+                        <div id="rc-zones"></div>
+                    </div>
+                </div>
+                <div class="main-calc">
+                    <div class="table-card">
+                        <h2 style="margin-bottom: 1.5rem; font-weight: 800;">Allures d'Entraînement</h2>
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border); margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <label class="i-label" style="margin-bottom: 0;">Intensité de l'effort (% VMA)</label>
+                                <div class="i-wrap" style="width: 100px;">
+                                    <input type="number" id="rc-p-custom" class="i-field" style="padding: 0.5rem 0.75rem; font-size: 1.25rem; text-align: center;" value="100">
+                                    <span class="i-unit" style="right: 0.5rem;">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="rc-p-slider" min="60" max="130" step="1" value="100" style="width: 100%; margin-bottom: 1.5rem;">
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                                <button class="btn-p rc-p-btn" data-p="80" style="padding: 0.75rem;">80%</button>
+                                <button class="btn-p rc-p-btn" data-p="90" style="padding: 0.75rem;">90%</button>
+                                <button class="btn-p rc-p-btn active" data-p="100" style="padding: 0.75rem;">100%</button>
+                                <button class="btn-p rc-p-btn" data-p="110" style="padding: 0.75rem;">110%</button>
+                            </div>
+                        </div>
+                        <table class="table">
+                            <thead><tr><th>Distance</th><th>Temps</th></tr></thead>
+                            <tbody id="rc-times"></tbody>
+                        </table>
+                    </div>
+                    <div class="table-card">
+                        <h2 style="margin-bottom: 1.5rem; font-weight: 800;">Prédictions de Course</h2>
+                        <table class="table">
+                            <thead><tr><th>Course</th><th>%VMA</th><th>Temps</th><th>FC Cible</th></tr></thead>
+                            <tbody id="rc-races"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BikeCalc View -->
+        <div id="v-b-calc" class="view hidden">
+            <div class="calc-layout">
+                <div class="side">
+                    <div class="box">
+                        <h2 class="box-h">Simulation Physique</h2>
+                        <div class="i-group">
+                            <label class="i-label">Poids Total</label>
+                            <div class="i-wrap"><input type="number" id="bc-w" class="i-field" value="85"><span class="i-unit">KG</span></div>
+                        </div>
+                        <div class="i-group">
+                            <label class="i-label">Puissance (W)</label>
+                            <input type="number" id="bc-p" class="i-field" value="193">
+                        </div>
+                        <div class="i-group">
+                            <label class="i-label">Pente (%)</label>
+                            <input type="number" step="1" id="bc-sl" class="i-field" value="0">
+                        </div>
+                        <div class="i-group">
+                            <label class="i-label">Vitesse (km/h)</label>
+                            <input type="number" step="1" id="bc-s" class="i-field" value="20">
+                        </div>
+                    </div>
+                </div>
+                <div class="main-calc">
+                    <div class="table-card">
+                        <h2 id="bc-chart-title" style="font-weight: 800; margin-bottom: 0.5rem;">Puissance vs Vitesse</h2>
+                        <div class="chart" id="bc-chart"></div>
+                    </div>
+                    <div class="table-card">
+                        <h2 id="bc-chart-sl-title" style="font-weight: 800; margin-bottom: 0.5rem;">Puissance vs Pente</h2>
+                        <div class="chart" id="bc-chart-sl"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="chart-tooltip"></div>
+
+    <div class="modal-bg" id="modal-bg">
+        <div class="modal">
+            <div class="modal-h">
+                <div id="modal-head"></div>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-b" id="modal-body"></div>
+            <div class="modal-f">
+                <button class="btn-p close" style="padding: 0.6rem 1.5rem; border-radius: 0.75rem;">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const RAW_CSV = `"Entraînement ""Moussien"" n°1";;Sisyphus Hill Session;;;;;;;;;
+30" à 5 Kpace;;;;;;;;;;;
+retour;;;;;;;;;;;
+60" à 5 Kpace;;;;;;;;;;;
+retour;;;;;;;;;;;
+90" à 5 Kpace;;;;;;;;;;;
+retour;;;;;;;;;;;
+2' à 5 Kpace;;;;;;;;;;;
+retour;;;;;;;;;;;
+2' de récup;;;;;;;;;;;
+Répéter;;;;;;;;;;;
+"Entraînement ""Moussien"" n°2";;Run 2-3 x (600m, 400m, 300m, 200m fast with 300m jog recoveries);;2 x 90 secondes au seuil ( cela correspond à la vitesse située entre votre record sur le 10 km et le semi)  90 secondes de récupération ;;;;;;;
+;;;;4 x 60 secondes allure 10 km 60 secondes de récupération ;;;;;;;
+600m à 80%;;;;4 x 30 secondes allure 5 km ( environ 5 sec/km plus rapidement que votre vitesse 10 km), 30 secondes de récupération ;;;;;;;
+"30"" de récup";;;;4 x 15 secondes allure maximale (adoptez la meme vitesse que sur le 30/30) 15 secondes de récupération ;;;;;;;
+"6' de 30x30"" à 100%";;Fartlek 5/3/1;;;;;;;;;
+3' de récup;;10'/20' min warmup + 5/8 strides;;;;;;;;;
+et rebelote pour la série ! ;;5' half marathon - 2 1/2 min recovery;;Prenez 2 à 3 minutes de récupération et répétez ce cycle une seconde fois;;;;;;;
+;;3' 10K - 1 1/2 min recovery;;10' x 2;;;;;;;
+;;1' 3K;;;;;;;;;
+"Entraînement ""Moussien"" n°3";;Jog 3';;Hill-Tempo Sandwich Workout;;;;;;;
+400m à 80%;;3x30 sec - 1' recovery;;;;;;;;;
+300m à 80%;;Jog 5';;Warm up with 10–20 minutes of easy jogging, followed by dynamic stretching, drills and strides.;;;;;;;
+200m à 80%;;Repeat 2 to 3 times (up to 5 sets);;On a hill with a 7–8 percent grade, run 3–6 x 20-second uphill repeats at around 90 percent effort. Focus on attacking the hill, running with erect posture, quick turnover, good knee lift and your arms driving you forward.;;;;;;;
+4x 100m ;;;;Walk or jog slowly down the hill to your starting point after each repeat, taking 60–90 seconds for recovery. After the final hill rep, jog slowly for 2:00 to a flatter stretch of road or trail.;;;;;;;
+Répéter;;Variation: é or 3 miles of tempo than 2 repeats;;Following your 2:00 jog recovery, run a 2–3 mile tempo run (or up to 25 minutes if you train by time) on the flatter stretch of road or trail at your goal half-marathon race pace/effort. ;;;;;;;
+800m accélération tous les 200m;;;;For more experienced runners, after finishing the tempo run, jog for 3-4 minutes as recovery, then head back to the hill for another set of hill reps and a second tempo run before cooling down;;;;;;;
+"Entraînement ""Moussien"" n°4";;;;;;;;;;;
+4x 200m ;;;;Pre workout;;;;;;;
+3' de récup;;;;3 miles;5 k;12,5;répétitions;;;;
+4x 200m ;;;;200 m at 3k pace;;50 s;;;;;
+3' de récup;;;;200 m +10 s;;60 s;;;;;
+4x 200m 110% sur 2ième 100m;;;;;;;;;;;
+"Entraînement ""Moussien"" n°5";;;;;;;;;;;
+"3'; 2'30; 2'; 1'30; 1' - 30 s de récup petites foulées";;;;;;;;;;;
+"500m; 400m; 300; 200; 100m - 30 s de récup";;;;;;;;;;;
+"Entraînement ""Moussien"" n°6";;;;;;;;;;;
+800 m à 80%;;;;;;;;;;;
+5x 30/30;;;;;;;;;;;
+1000m à 80%;;;;;;;;;;;
+5x 200m récup 30s/25s/20s/15s/10s;;;;;;;;;;;
+"Entraînement ""Moussien"" n°7";;;;;;;;;;;
+"800m/400m/800m/400m 30"" de récup";;;;;;;;;;;
+2' récup;;;;;;;;;;;
+"400m/300m/200m/200m et 6x 100m 20"" récup";;;;;;;;;;;
+"Entraînement ""Moussien"" n°8";;;;;;;;;;;
+80% toute la séance;;;;;;;;;;;
+2 *Navette (100 m A/R) 30s récup;;;;;;;;;;;
+1' récup;;;;;;;;;;;
+400m 1' Récup;;;;;;;;;;;
+4x200m récup 20s/15s/10s;;;;;;;;;;;
+2' récup;;;;;;;;;;;
+et rebelote;;;;;;;;;;;
+"Entraînement ""Moussien"" n°9";;;;;;;;;;;
+2 * 1000 (@80%) 2 mn récup;;;;;;;;;;;
+"400m/300m/200m/100m 30"" récup";;;;;;;;;;;
+"Entraînement ""Moussien"" n°10";;;;;;;;;;;
+"5 * (300(@100%) 1 mn récup; (200(@100%) 2 mn récup)";;;;;;;;;;;
+"400m/300m/200m/100m 30"" récup";;;;;;;;;;;
+"Entraînement ""Moussien"" n°11";;;;;;;;;;;
+3 x 400 m (@80%) - 1 min ;;;;;;;;;;;
+3 x 300 m (@90%) - 45 s ;;;;;;;;;;;
+4 x 200 m (@100%) - 30s ;;;;;;;;;;;
+5 min avec accélération tous les 300m ;;;;;;;;;;;
+"Entraînement ""Moussien"" n°12";;;;;;;;;;;
+1' (@85%) - 15s ;;;;;;;;;;;
+"45"" (@95%) - 15s ";;;;;;;;;;;
+"30"" (@100%) - 15s ";;;;;;;;;;;
+"15"" (@110%) - 15s ";;;;;;;;;;;
+2'30 de repos ;;;;;;;;;;;
+répéter 4x ;;;;;;;;;;;
+"Entraînement ""Moussien"" n°13";;;;;;;;;;;
+400 m à fond;;;;;;;;;;;
+R = 2'30;;;;;;;;;;;
+200 m(@100%) - R = 30s;;;;;;;;;;;
+200 m(@90%) - R = 30s;;;;;;;;;;;
+200 m(@85%) - R = 30s;;;;;;;;;;;
+200 m(@100%) - R = 30s;;;;;;;;;;;
+R = 4';;;;;;;;;;;
+répéter;;;;;;;;;;;
+"Entraînement ""Moussien"" n°14";;;;;;;;;;;
+3 x 600 m @ 88%;;;;;;;;;;;
+2‘30 R;;;;;;;;;;;
+4 x 200m à fond 40s R;;;;;;;;;;;
+2'30;;;;;;;;;;;
+2 x. 800 m;;;;;;;;;;;
+"Entraînement ""Moussien"" n°15";;;;;;;;;;;
+1' à 80% ;;;;;;;;;;;
+"15"" de récup ";;;;;;;;;;;
+"45"" à 85% ";;;;;;;;;;;
+"15"" de récup ";;;;;;;;;;;
+"30"" à 95% ";;;;;;;;;;;
+"15"" de récup ";;;;;;;;;;;
+"15"" à fond ";;;;;;;;;;;
+"1'30"" de récup ";;;;;;;;;;;
+et tout cela 5 fois ! ;;;;;;;;;;;
+"Entraînement ""Moussien"" n°16";;;;;;;;;;;
+300m à 80%;;;;;;;;;;;
+exercice levé rapide de genoux sur 50m, ;;;;;;;;;;;
+récup 50m;;;;;;;;;;;
+200 à 100%;;;;;;;;;;;
+exercice de talons fesses sur 50m;;;;;;;;;;;
+récup 50m;;;;;;;;;;;
+tout cela 5 fois, en alternant les exercices avec levé de genoux, talons fesses, jambes en avant, chassé croisé de coté, ...;;;;;;;;;;;
+"Entraînement ""Moussien"" n°17";;;;;;;;;;;
+"30""  ";"à 80% et 15"" de récup";;;;;;;;;;
+"45""";"à 80% et 15"" de récup";;;;;;;;;;
+1';"à 80% et 15"" de récup";;;;;;;;;;
+"1'15""";"à 80% et 15"" de récup";;;;;;;;;;
+"1'30""";"à 80% et 15"" de récup";;;;;;;;;;
+"1'45""";"à 80% et 15"" de récup";;;;;;;;;;
+"2'00""";"à 80% et 15"" de récup";;;;;;;;;;
+"2'15""";"à 80% et 15"" de récup";;;;;;;;;;
+"2'30""";"à 80% et 15"" de récup";;;;;;;;;;
+"(15"" 130% VMA 30"" récup) x 6";;;;;;;;;;;
+Inverse de la 1ère pyramide;;;;;;;;;;;
+"(30"" 130% VMA 15"" récup) x 6";;;;;;;;;;;
+"Entraînement ""Moussien"" n°18";;;;;;;;;;;
+200m;"à 90% et 25"" de récup";;;;;;;;;;
+200m;"à 90% et 20"" de récup";;;;;;;;;;
+"200m """;"à 90% et 15"" de récup";;;;;;;;;;
+200m;"à 90% et 10"" de récup";;;;;;;;;;
+200m;"à 90% et 5"" de récup";;;;;;;;;;
+200m;à 90%;;;;;;;;;;
+4 minutes de récup puis seconde série;;;;;;;;;;;
+"3 x 400m avec 300m à 80% puis 100m à 100% et 1'15"" de récup";;;;;;;;;;;
+"Entraînement ""Moussien"" n°19";;;;;;;;;;;
+800m à 80% + ½ tps en récup;;;;;;;;;;;
+600m à 90%+ ½ tps en récup;;;;;;;;;;;
+"3x300m à 100% +30"" de récup";;;;;;;;;;;
+3' de récup et seconde série;;;;;;;;;;;
+"Entraînement ""Moussien"" n°20";;;;;;;;;;;
+"2 x 400m à 80% avec  45"" de récup";;;;;;;;;;;
+"6x200m à 100% avec 30"" puis 25"" puis 20, 15 et 10s de récup.";;;;;;;;;;;
+3' de récup;;;;;;;;;;;
+2 x 600m à 80% with  1' de récup;;;;;;;;;;;
+"6x200m à 100% with 30"" puis 25"" puis 20, 15 et 10 de récup.";;;;;;;;;;;
+"Entraînement ""Moussien"" n°21";;;;;;;;;;;
+30' continu;;;;;;;;;;;
+1' /1'30/2'/2'30 recup 30s;;;;;;;;;;;
+200/300/400/500/600 recup 30s;;;;;;;;;;;
+1' /1'30/2'/2'30 recup 30s;;;;;;;;;;;
+"Entraînement ""Moussien"" n°22";;;;;;;;;;;
+"2' à 80% avec 1'30"" de recup";;;;;;;;;;;
+4*200m à 100% avec 40s de recup;;;;;;;;;;;
+2'30s de recup;;;;;;;;;;;
+répéter 3 fois;;;;;;;;;;;
+"Entraînement ""Moussien"" n°23";;;;;;;;;;;
+"5' à 85% avec 1'00"" de recup";;;;;;;;;;;
+"4' à 90% avec 1' 30"" de recup";;;;;;;;;;;
+"3' à 100% avec 2'00"" de recup";;;;;;;;;;;
+2' à 100%;;;;;;;;;;;
+5*200m à 110% avec 40s de recup;;;;;;;;;;;
+"Entraînement ""Moussien"" n°51";;Le Mona Fartlek;;20' warm up;2 x 90s (seuil) / 90s rec;4 x 60s (10k) / 60s rec;4 x 30s (5k) / 30s rec;4 x 15s (max) / 15s rec;2 à 3 minutes de récupération et répétez ce cycle une seconde fois;10' cool down
+"Entraînement ""Moussien"" n°52";;4x4 Norvégien;;20' warm up;4 x 4 min (90-95% FC Max);3 min récup active (70% FC Max);15' cool down`;
+
+        const BIKE_DATA = [
+            { id: 'b1', title: 'La vélocité', category: 'Vélocité', desc: 'Coordination et vitesse de pédalage.', details: ['3-4x série:', '10 min > 100-110 rpm', '1-2 min accélération progressive', 'Récup 5 min'] },
+            { id: 'b2', title: 'La force', category: 'Force', desc: 'Force musculaire spécifique.', details: ['3-4x série:', '10 min < 50 rpm', '4 min au seuil 60-70 rpm', 'Récup 5 min'] },
+            { id: 'b3', title: 'PMA (Var. 1)', category: 'PMA', desc: 'Fractionné court pour la PMA.', details: ['2 séries de 6x (1 min à PMA / 1 min souple)', 'Récup 3 min entre séries'] },
+            { id: 'b4', title: 'Seuil', category: 'Seuil', desc: 'Travail au seuil anaérobie.', details: ['3-4 séries de 10-12 min allure course', 'Cadence libre', 'Récup 3 min'] },
+            { id: 'b5', title: 'Anaérobie', category: 'Anaérobie', desc: 'Tolérance aux lactates.', details: ['5-10 sprints max', 'Effort 30 sec', 'Récup 6-8 min'] },
+            { id: 'b6', title: 'Endurance Fondamentale', category: 'Endurance', desc: 'Base aérobie.', details: ['2h à 3h en zone 2', 'Cadence 85-95 rpm', 'Terrain plat ou vallonné'] },
+            { id: 'b7', title: 'Sprints courts', category: 'Anaérobie', desc: 'Explosivité.', details: ['10x 10s sprint max', 'Récup 2 min entre sprints'] },
+            { id: 'b8', title: 'Escalade Force', category: 'Force', desc: 'Grimper en montagne.', details: ['2x 20 min en montée', 'Cadence 60-70 rpm', 'Récup descente'] },
+            { id: 'b9', title: 'PMA (Var. 2)', category: 'PMA', desc: 'Fractionné long.', details: ['5x 3 min à PMA', 'Récup 3 min souple'] },
+            { id: 'b10', title: 'Vélocité Max', category: 'Vélocité', desc: 'Vitesse de jambes pure.', details: ['10x 15s hyper-vélocité (>120 rpm)', 'Récup 1 min 45s'] },
+            { id: 'b11', title: 'Récupération Active', category: 'Endurance', desc: 'Favoriser la récupération.', details: ['45-60 min zone 1', 'Cadence souple 90 rpm', 'Terrain plat'] },
+            { id: 'b12', title: 'Contre-la-montre', category: 'Seuil', desc: 'Maintenir une puissance élevée.', details: ['20 min à 95-100% du seuil', 'Position aéro', 'Cadence régulière'] },
+            { id: 'b13', title: 'FTP - Sweet Spot', category: 'FTP', desc: 'Amélioration du seuil FTP.', details: ['2x 20 min à 88-92% FTP', 'Récup 5 min entre les blocs', 'Cadence 85-95 rpm'] },
+            { id: 'b14', title: 'FTP - Over/Under', category: 'FTP', desc: 'Travail de la puissance critique.', details: ['3x (4 min à 95% FTP / 1 min à 105% FTP)', 'Récup 5 min entre séries'] },
+            { id: 'b15', title: 'FTP - Test 20 min', category: 'FTP', desc: 'Évaluation de la FTP.', details: ['20 min échauffement', '5 min à fond', '10 min récup', '20 min effort maximal constant'] }
+        ];
+
+        let state = {
+            v: 'run',
+            runF: { q: '', d: 10000, t: 90, c: 'Tous' },
+            bikeF: { c: 'Tous', ftp: 230 },
+            rc: { age: 62, rhr: 52, vma: 13.4, p: 100 },
+            bc: { w: 85, p: 105, sl: 0, s: 20, m: 's' },
+            workouts: []
+        };
+
+        // --- Utils ---
+        const $ = s => document.querySelector(s);
+        const $$ = s => document.querySelectorAll(s);
+
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const workouts = [];
+            let curr = null;
+            lines.forEach(l => {
+                if (!l.trim()) return;
+                const cols = l.split(';').map(c => c.replace(/^"|"$/g, '').trim());
+                const isM = cols[0].toLowerCase().includes('entraînement') && cols[0].toLowerCase().includes('moussien');
+                const isS = cols[2] && (cols[2].includes('Sisyphus') || cols[2].includes('Mona') || cols[2].includes('4x4'));
+                if (isM || isS) {
+                    if (curr) workouts.push(curr);
+                    curr = { id: 'w'+workouts.length, title: isS ? cols[2] : cols[0], steps: [], category: 'Mixte' };
+                    for (let i = 4; i < cols.length; i++) if (cols[i]) curr.steps.push(cols[i]);
+                } else if (curr && cols[0]) curr.steps.push(cols[0]);
+            });
+            if (curr) workouts.push(curr);
+            return workouts.map(w => {
+                const m = calcMetrics(w.steps);
+                const t = w.steps.join(' ').toLowerCase();
+                let c = 'Mixte';
+                if (t.includes('100%') || t.includes('vma')) c = 'VMA';
+                else if (t.includes('85%') || t.includes('seuil')) c = 'Seuil';
+                else if (t.includes('80%') || t.includes('endurance')) c = 'Endurance';
+                return { ...w, category: c, ...m };
+            });
+        }
+
+        function calcMetrics(steps) {
+            let d = 0, t = 0, id = 0;
+            steps.forEach(s => {
+                const l = s.toLowerCase();
+                const isR = l.includes('récup') || l.includes('repos') || l.includes('jog');
+                const m = (l.match(/(\d+)\s*[x\*]/) || [0, 1])[1];
+                const dist = l.match(/(\d+)\s*(m|km)/);
+                if (dist) {
+                    const v = parseInt(dist[1]) * (dist[2] === 'km' ? 1000 : 1) * m;
+                    d += v; if (!isR) id += v; t += (v / 1000) * (isR ? 6 : 4);
+                } else {
+                    const time = l.match(/(\d+)\s*('|min|mn|s)/);
+                    if (time) {
+                        const v = parseInt(time[1]) * m;
+                        const mins = time[2] === 's' ? v / 60 : v;
+                        t += mins; d += mins * (isR ? 166 : 250); if (!isR) id += mins * 250;
+                    }
+                }
+            });
+            if (t < 15) { t += 20; d += 3000; }
+            return { dist: Math.round(d), time: Math.round(t), intensity: Math.round(id) };
+        }
+
+        // --- Logic ---
+        function updateRunCalc() {
+            const { age, rhr, vma, p } = state.rc;
+            const mhr = 220 - age, hrr = mhr - rhr, spd = vma * (p / 100);
+            $('#rc-zones').innerHTML = [70, 80, 85, 90, 95].map(pct => `
+                <div class="row">
+                    <span class="row-l">${pct}%</span>
+                    <span class="row-v">${Math.round(hrr * (pct/100) + rhr)} BPM</span>
+                </div>
+            `).join('') + `<div class="row" style="background:#f1f5f9;padding:0.5rem;border-radius:0.5rem;margin-top:0.5rem;"><span class="row-l">MAX</span><span class="row-v">${mhr} BPM</span></div>`;
+            $('#rc-times').innerHTML = [200, 400, 800, 1000].map(d => {
+                const s = d / (spd / 3.6);
+                let sub = '';
+                if (d === 200) {
+                    const s193 = 193 / (spd / 3.6);
+                    sub = `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">193m: ${Math.floor(s193/60)}:${Math.round(s193%60).toString().padStart(2, '0')}</div>`;
+                } else if (d === 400) {
+                    const s386 = 386 / (spd / 3.6);
+                    sub = `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">386m: ${Math.floor(s386/60)}:${Math.round(s386%60).toString().padStart(2, '0')}</div>`;
+                } else if (d === 800) {
+                    const s772 = 772 / (spd / 3.6);
+                    sub = `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">772m: ${Math.floor(s772/60)}:${Math.round(s772%60).toString().padStart(2, '0')}</div>`;
+                }
+                return `<tr><td>${d}m ${sub}</td><td class="row-v">${Math.floor(s/60)}:${Math.round(s%60).toString().padStart(2, '0')}</td></tr>`;
+            }).join('');
+            $('#rc-races').innerHTML = [{l:'5K',d:5000,p:90},{l:'10K',d:10000,p:88},{l:'Semi',d:21097,p:85},{l:'Marathon',d:42195,p:80}].map(r => {
+                const s = vma * (r.p / 100), sec = r.d / (s / 3.6);
+                const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), sc = Math.round(sec % 60);
+                const time = h > 0 ? `${h}h ${m}m` : `${m}:${sc.toString().padStart(2, '0')}`;
+                return `<tr><td>${r.l}</td><td>${r.p}%</td><td class="row-v">${time}</td><td>${Math.round(hrr * (r.p/100) + rhr)}</td></tr>`;
+            }).join('');
+        }
+
+        function bikePhys(p, sl, w, s, mode) {
+            const G = 9.81, RHO = 1.225, CDA = 0.52, CRR = 0.0065, LOSS = 0.08;
+            if (mode === 's') {
+                let v = 5; const pE = p * (1 - LOSS), th = Math.atan(sl / 100);
+                const c1 = (CRR * w * G * Math.cos(th)) + (w * G * Math.sin(th)), c2 = 0.5 * CDA * RHO;
+                for (let i = 0; i < 15; i++) v -= (c2 * v**3 + c1 * v - pE) / (3 * c2 * v**2 + c1);
+                return Math.max(0, v * 3.6);
+            } else {
+                const v = s / 3.6, th = Math.atan(sl / 100);
+                return ((CRR * w * G * Math.cos(th) + w * G * Math.sin(th) + 0.5 * CDA * RHO * v**2) * v) / (1 - LOSS);
+            }
+        }
+
+        function updateBikeCalc() {
+            const { w, p, sl, s, m } = state.bc;
+            if (m === 's') {
+                const res = bikePhys(p, sl, w, 0, 's');
+                $('#bc-s').value = res.toFixed(1);
+                state.bc.s = res;
+            } else {
+                const res = bikePhys(0, sl, w, s, 'p');
+                $('#bc-p').value = Math.round(res);
+                state.bc.p = res;
+            }
+            renderBikeChart();
+            renderBikeSlopeChart();
+        }
+
+        function showTooltip(e, text) {
+            const tip = $('#chart-tooltip');
+            tip.innerHTML = text;
+            tip.style.display = 'block';
+            tip.style.left = (e.clientX + 10) + 'px';
+            tip.style.top = (e.clientY - 30) + 'px';
+        }
+        function hideTooltip() { $('#chart-tooltip').style.display = 'none'; }
+
+        function renderBikeChart() {
+            const { sl, w } = state.bc;
+            const data = []; for (let s = 10; s <= 40; s += 5) data.push({ s, p: bikePhys(0, sl, w, s, 'p') });
+            const maxP = Math.max(...data.map(d => d.p), 1);
+            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;">`;
+            
+            for (let i = 0; i <= 5; i++) {
+                const y = 200 - (i / 5) * 180;
+                const val = Math.round((i / 5) * maxP);
+                svg += `<line x1="0" y1="${y}" x2="400" y2="${y}" stroke="#f1f5f9" stroke-width="1" />`;
+                svg += `<text x="-5" y="${y + 4}" class="chart-label" text-anchor="end">${val}W</text>`;
+            }
+
+            svg += `<path class="chart-area" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + ` L 400 200 Z" />`;
+            svg += `<path class="chart-line" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + `" />`;
+            data.forEach((d, i) => {
+                const x = (i / (data.length-1)) * 400;
+                const y = 200 - (d.p / maxP) * 180;
+                svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.s}</text>`;
+                svg += `<circle cx="${x}" cy="${y}" r="5" class="chart-dot" onmousemove="showTooltip(event, '${d.s} km/h: ${Math.round(d.p)}W')" onmouseleave="hideTooltip()" />`;
+            });
+            svg += `</svg>`;
+            $('#bc-chart').innerHTML = svg;
+            $('#bc-chart-title').innerText = `Puissance (W) par Vitesse (km/h) à ${sl}%`;
+        }
+
+        function renderBikeSpeedChart() {
+            const { sl, w } = state.bc;
+            const data = []; for (let p = 50; p <= 400; p += 50) data.push({ p, s: bikePhys(p, sl, w, 0, 's') });
+            const maxS = Math.max(...data.map(d => d.s), 1);
+            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;">`;
+            
+            for (let i = 0; i <= 5; i++) {
+                const y = 200 - (i / 5) * 180;
+                const val = ((i / 5) * maxS).toFixed(1);
+                svg += `<line x1="0" y1="${y}" x2="400" y2="${y}" stroke="#f1f5f9" stroke-width="1" />`;
+                svg += `<text x="-5" y="${y + 4}" class="chart-label" text-anchor="end">${val}</text>`;
+            }
+
+            svg += `<path class="chart-area" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.s / maxS) * 180}`).join(' ') + ` L 400 200 Z" />`;
+            svg += `<path class="chart-line" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.s / maxS) * 180}`).join(' ') + `" />`;
+            data.forEach((d, i) => {
+                const x = (i / (data.length-1)) * 400;
+                const y = 200 - (d.s / maxS) * 180;
+                svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.p}W</text>`;
+                svg += `<circle cx="${x}" cy="${y}" r="5" class="chart-dot" onmousemove="showTooltip(event, '${d.p}W: ${d.s.toFixed(1)} km/h')" onmouseleave="hideTooltip()" />`;
+            });
+            svg += `</svg>`;
+            $('#bc-chart-v').innerHTML = svg;
+            $('#bc-chart-v-title').innerText = `Vitesse (km/h) par Puissance (W) à ${sl}%`;
+        }
+
+        function renderBikeSlopeChart() {
+            const { s, w } = state.bc;
+            const data = []; for (let sl = 0; sl <= 15; sl += 1) data.push({ sl, p: bikePhys(0, sl, w, s, 'p') });
+            const maxP = Math.max(...data.map(d => d.p), 1);
+            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;">`;
+            
+            for (let i = 0; i <= 5; i++) {
+                const y = 200 - (i / 5) * 180;
+                const val = Math.round((i / 5) * maxP);
+                svg += `<line x1="0" y1="${y}" x2="400" y2="${y}" stroke="#f1f5f9" stroke-width="1" />`;
+                svg += `<text x="-5" y="${y + 4}" class="chart-label" text-anchor="end">${val}W</text>`;
+            }
+
+            svg += `<path class="chart-area" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + ` L 400 200 Z" />`;
+            svg += `<path class="chart-line" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + `" />`;
+            data.forEach((d, i) => {
+                const x = (i / (data.length-1)) * 400;
+                const y = 200 - (d.p / maxP) * 180;
+                if (d.sl % 2 === 0 || d.sl === 15) {
+                    svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.sl}%</text>`;
+                }
+                svg += `<circle cx="${x}" cy="${y}" r="4" class="chart-dot" onmousemove="showTooltip(event, '${d.sl}%: ${Math.round(d.p)}W')" onmouseleave="hideTooltip()" />`;
+            });
+            svg += `</svg>`;
+            $('#bc-chart-sl').innerHTML = svg;
+            $('#bc-chart-sl-title').innerText = `Puissance (W) par Pente (%) à ${Math.round(s)} km/h`;
+        }
+
+        // --- Rendering ---
+        function renderRun() {
+            const grid = $('#run-grid');
+            const filtered = state.workouts.filter(w => {
+                const f = state.runF;
+                return (f.c === 'Tous' || w.category === f.c) && (w.dist <= f.d) && (w.time <= f.t) && (w.title.toLowerCase().includes(f.q.toLowerCase()));
+            });
+            grid.innerHTML = filtered.map(w => `
+                <div class="card" onclick="openModal('${w.id}')">
+                    <span class="badge b-${w.category.toLowerCase()}">${w.category}</span>
+                    <h3 class="card-title">${w.title}</h3>
+                    <div class="card-metrics">
+                        <div class="m-box"><div class="m-label">Intensité</div><div class="m-val">${(w.intensity/1000).toFixed(1)} km</div></div>
+                        <div class="m-box"><div class="m-label">Temps</div><div class="m-val">${w.time} min</div></div>
+                    </div>
+                    <div class="card-steps">
+                        ${w.steps.slice(0, 2).map(s => `<div class="step"><div class="dot"></div><span>${s}</span></div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderBike() {
+            const grid = $('#bike-grid');
+            const filtered = BIKE_DATA.filter(w => state.bikeF.c === 'Tous' || w.category === state.bikeF.c);
+            grid.innerHTML = filtered.map(w => {
+                const previewSteps = w.details.slice(0, 2).map(d => {
+                    let text = d;
+                    const ftpMatch = d.match(/(\d+)\s*-?\s*(\d+)?\s*% FTP/);
+                    if (ftpMatch) {
+                        const p1 = Math.round(state.bikeF.ftp * (parseInt(ftpMatch[1]) / 100));
+                        if (ftpMatch[2]) {
+                            const p2 = Math.round(state.bikeF.ftp * (parseInt(ftpMatch[2]) / 100));
+                            text = text.replace(/(\d+)\s*-\s*(\d+)\s*% FTP/, `$1-$2% FTP (${p1}-${p2}W)`);
+                        } else {
+                            text = text.replace(/(\d+)\s*% FTP/, `$1% FTP (${p1}W)`);
+                        }
+                    }
+                    return `<div class="step"><div class="dot"></div><span>${text}</span></div>`;
+                }).join('');
+
+                return `
+                <div class="card" onclick="openBikeModal('${w.id}')">
+                    <span class="badge b-mixte">${w.category}</span>
+                    <h3 class="card-title">${w.title}</h3>
+                    <p style="font-size:0.85rem;color:#64748b;margin-bottom:1rem;">${w.desc}</p>
+                    <div class="card-steps">${previewSteps}</div>
+                </div>
+            `}).join('');
+        }
+
+        function openModal(id) {
+            const w = state.workouts.find(x => x.id === id);
+            $('#modal-head').innerHTML = `<span class="badge b-${w.category.toLowerCase()}">${w.category}</span><h2 style="font-weight:800;font-size:1.25rem;">${w.title}</h2>`;
+            $('#modal-body').innerHTML = `
+                <div class="card-metrics" style="margin-bottom:1.5rem;">
+                    <div class="m-box"><div class="m-label">Dist. Totale</div><div class="m-val">${(w.dist/1000).toFixed(2)} km</div></div>
+                    <div class="m-box"><div class="m-label">Intensité</div><div class="m-val">${(w.intensity/1000).toFixed(2)} km</div></div>
+                    <div class="m-box"><div class="m-label">Temps Est.</div><div class="m-val">${w.time} min</div></div>
+                </div>
+                <div class="card-steps">${w.steps.map(s => `<div class="step" style="margin-bottom:0.5rem;"><div class="dot"></div><span>${s}</span></div>`).join('')}</div>`;
+            $('#modal-bg').style.display = 'flex';
+            document.body.classList.add('no-scroll');
+        }
+
+        function openBikeModal(id) {
+            const w = BIKE_DATA.find(x => x.id === id);
+            const details = w.details.map(d => {
+                let text = d;
+                const ftpMatch = d.match(/(\d+)\s*-?\s*(\d+)?\s*% FTP/);
+                if (ftpMatch) {
+                    const p1 = Math.round(state.bikeF.ftp * (parseInt(ftpMatch[1]) / 100));
+                    let watts = `(${p1}W)`;
+                    if (ftpMatch[2]) {
+                        const p2 = Math.round(state.bikeF.ftp * (parseInt(ftpMatch[2]) / 100));
+                        watts = `(${p1}-${p2}W)`;
+                    }
+                    text += ` <strong style="color:var(--primary)">${watts}</strong>`;
+                }
+                return `<div class="step" style="margin-bottom:0.5rem;"><div class="dot"></div><span>${text}</span></div>`;
+            }).join('');
+            
+            $('#modal-head').innerHTML = `<span class="badge b-mixte">${w.category}</span><h2 style="font-weight:800;font-size:1.25rem;">${w.title}</h2>`;
+            $('#modal-body').innerHTML = `<p style="margin-bottom:1.5rem;color:var(--primary);font-weight:700;">${w.desc}</p><div class="card-steps">${details}</div>`;
+            $('#modal-bg').style.display = 'flex';
+            document.body.classList.add('no-scroll');
+        }
+
+        // --- Events ---
+        $$('.nav-btn').forEach(b => b.onclick = () => {
+            $$('.nav-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            $$('.view').forEach(v => v.classList.add('hidden'));
+            $('#v-' + b.dataset.v).classList.remove('hidden');
+            state.v = b.dataset.v;
+            if (state.v === 'bike') renderBike();
+            if (state.v === 'r-calc') updateRunCalc();
+            if (state.v === 'b-calc') updateBikeCalc();
+        });
+
+        $('#run-q').oninput = e => { state.runF.q = e.target.value; renderRun(); };
+        $('#run-d').oninput = e => { state.runF.d = parseInt(e.target.value); $('#dist-txt').innerText = (state.runF.d/1000).toFixed(1) + ' km'; renderRun(); };
+        $('#run-t').oninput = e => { state.runF.t = parseInt(e.target.value); $('#time-txt').innerText = state.runF.t + ' min'; renderRun(); };
+        $('#run-reset').onclick = () => { state.runF = { q: '', d: 10000, t: 90, c: 'Tous' }; $('#run-q').value = ''; $('#run-d').value = 10000; $('#run-t').value = 90; $('#dist-txt').innerText = '10.0 km'; $('#time-txt').innerText = '90 min'; $$('#run-cats .cat-btn').forEach(b => b.classList.toggle('active', b.dataset.c === 'Tous')); renderRun(); };
+        $('#run-cats').onclick = e => { if (e.target.dataset.c) { $$('#run-cats .cat-btn').forEach(b => b.classList.remove('active')); $$('#run-specials .cat-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); state.runF.c = e.target.dataset.c; state.runF.q = ''; $('#run-q').value = ''; renderRun(); } };
+        $('#run-specials').onclick = e => { 
+            if (e.target.dataset.s) { 
+                $$('#run-cats .cat-btn').forEach(b => b.classList.remove('active')); 
+                $$('#run-specials .cat-btn').forEach(b => b.classList.remove('active')); 
+                e.target.classList.add('active'); 
+                const q = e.target.dataset.s === 'Mona' ? 'Le Mona Fartlek' : e.target.dataset.s;
+                state.runF = { q: q, d: 15000, t: 120, c: 'Tous' }; 
+                $('#run-q').value = q; 
+                $('#run-d').value = 15000;
+                $('#run-t').value = 120;
+                $('#dist-txt').innerText = '15.0 km';
+                $('#time-txt').innerText = '120 min';
+                renderRun(); 
+            } 
+        };
+        $('#bike-cats').onclick = e => { if (e.target.dataset.c) { $$('#bike-cats .cat-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); state.bikeF.c = e.target.dataset.c; renderBike(); } };
+        $('#bike-ftp').oninput = e => { state.bikeF.ftp = parseInt(e.target.value) || 0; renderBike(); };
+
+        ['age', 'rhr', 'vma'].forEach(id => $('#rc-'+id).oninput = e => { state.rc[id] = parseFloat(e.target.value); updateRunCalc(); });
+        
+        const syncRCP = (val) => {
+            state.rc.p = val;
+            $('#rc-p-custom').value = val;
+            $('#rc-p-slider').value = val;
+            $$('.rc-p-btn').forEach(x => x.classList.toggle('active', parseInt(x.dataset.p) === val));
+            updateRunCalc();
+        };
+
+        $('#rc-p-custom').oninput = e => syncRCP(parseFloat(e.target.value) || 0);
+        $('#rc-p-slider').oninput = e => syncRCP(parseFloat(e.target.value));
+        
+        $$('.rc-p-btn').forEach(b => b.onclick = () => syncRCP(parseInt(b.dataset.p)));
+
+        ['w', 'p', 'sl', 's'].forEach(id => $('#bc-'+id).oninput = e => { state.bc[id] = parseFloat(e.target.value); state.bc.m = (id === 'p' || id === 'sl') ? 's' : 'p'; updateBikeCalc(); });
+
+        $$('.close').forEach(b => b.onclick = () => { $('#modal-bg').style.display = 'none'; document.body.classList.remove('no-scroll'); });
+        window.onclick = e => { if (e.target === $('#modal-bg')) { $('#modal-bg').style.display = 'none'; document.body.classList.remove('no-scroll'); } };
+
+        // --- Init ---
+        state.workouts = parseCSV(RAW_CSV);
+        renderRun();
+        renderBike();
+    </script>
+</body>
+</html>
