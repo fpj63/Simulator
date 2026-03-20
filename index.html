@@ -49,6 +49,8 @@
         .b-vma { background: #fee2e2; color: #b91c1c; }
         .b-seuil { background: #fef3c7; color: #b45309; }
         .b-endurance { background: #d1fae5; color: #047857; }
+        .b-interval { background: #fef2f2; color: #991b1b; }
+        .b-phares { background: #e0f2fe; color: #0369a1; }
         .b-mixte { background: #f1f5f9; color: #475569; }
         .card-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.3; color: #1e293b; }
         .card-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
@@ -109,14 +111,15 @@
     </style>
 </head>
 <body>
+    <div id="chart-tooltip"></div>
     <header>
         <div class="container header-flex">
             <div class="logo">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 12h-5"/><path d="M5.8 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M10.3 15H18"/><path d="M10.3 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M15 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/><path d="M5.8 15H10.3"/><path d="M2 12h5.8"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M20 12h2"/><path d="M19 5l-2.1 2.1"/><path d="M7.1 16.9L5 19"/><path d="M5 5l2.1 2.1"/><path d="M16.9 16.9L19 19"/></svg>
-                <span>ENTRAÎNEMENTS MOUSSIEN</span>
+                <span>MOUSSIENS</span>
             </div>
             <nav class="nav">
-                <button class="nav-btn active" data-v="run">Running</button>
+                <button class="nav-btn active" data-v="intervals">Intervals</button>
                 <button class="nav-btn" data-v="bike">Vélo</button>
                 <button class="nav-btn" data-v="r-calc">RunCalc</button>
                 <button class="nav-btn" data-v="b-calc">BikeCalc</button>
@@ -125,39 +128,41 @@
     </header>
 
     <main class="container">
-        <!-- Running View -->
-        <div id="v-run" class="view">
+        <!-- Intervals View -->
+        <div id="v-intervals" class="view">
             <div class="filters-bar">
                 <div class="filters-grid">
                     <div class="f-group">
                         <label class="f-label">Rechercher</label>
-                        <input type="text" id="run-q" class="f-input" placeholder="Titre, étape...">
+                        <input type="text" id="int-q" class="f-input" placeholder="Titre, étape...">
                     </div>
                     <div class="f-group">
-                        <label class="f-label">Distance Max <span id="dist-txt">10.0 km</span></label>
-                        <input type="range" id="run-d" min="1000" max="15000" step="500" value="10000">
+                        <label class="f-label">Distance Max <span id="int-dist-txt">15.0 km</span></label>
+                        <input type="range" id="int-d" min="1000" max="30000" step="500" value="15000">
                     </div>
                     <div class="f-group">
-                        <label class="f-label">Temps Max <span id="time-txt">90 min</span></label>
-                        <input type="range" id="run-t" min="20" max="120" step="5" value="90">
+                        <label class="f-label">Temps Max <span id="int-time-txt">120 min</span></label>
+                        <input type="range" id="int-t" min="20" max="240" step="5" value="120">
                     </div>
-                    <button id="run-reset" class="btn-p" style="padding: 0.6rem 1.25rem;">Reset</button>
+                    <button id="int-reset" class="btn-p" style="padding: 0.6rem 1.25rem;">Reset</button>
                 </div>
-                <div class="cat-bar" id="run-cats">
+                <div class="cat-bar" id="int-cats">
                     <button class="cat-btn active" data-c="Tous">Tous</button>
+                    <button class="cat-btn" data-c="Phares">Phares</button>
+                    <button class="cat-btn" data-c="Moussien">Moussien</button>
                     <button class="cat-btn" data-c="VMA">VMA</button>
                     <button class="cat-btn" data-c="Seuil">Seuil</button>
                     <button class="cat-btn" data-c="Endurance">Endurance</button>
                     <button class="cat-btn" data-c="Mixte">Mixte</button>
                 </div>
-                <div class="cat-bar" id="run-specials" style="padding-top: 0;">
-                    <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 0.5rem;">PHARES:</span>
-                    <button class="cat-btn" data-s="Mona">MONA</button>
-                    <button class="cat-btn" data-s="4x4">4x4 Norvégien</button>
+                <div class="cat-bar" id="int-specials" style="padding-top: 0;">
+                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.5rem; align-self: center;">PHARES :</span>
+                    <button class="cat-btn" data-s="Mona">Mona</button>
+                    <button class="cat-btn" data-s="4x4">4x4</button>
                     <button class="cat-btn" data-s="Sisyphus">Sisyphus</button>
                 </div>
             </div>
-            <div class="grid" id="run-grid"></div>
+            <div class="grid" id="intervals-grid"></div>
         </div>
 
         <!-- Cycling View -->
@@ -219,11 +224,18 @@
                                 </div>
                             </div>
                             <input type="range" id="rc-p-slider" min="60" max="130" step="1" value="100" style="width: 100%; margin-bottom: 1.5rem;">
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
                                 <button class="btn-p rc-p-btn" data-p="80" style="padding: 0.75rem;">80%</button>
+                                <button class="btn-p rc-p-btn" data-p="85" style="padding: 0.75rem;">85%</button>
                                 <button class="btn-p rc-p-btn" data-p="90" style="padding: 0.75rem;">90%</button>
+                                <button class="btn-p rc-p-btn" data-p="95" style="padding: 0.75rem;">95%</button>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem;">
                                 <button class="btn-p rc-p-btn active" data-p="100" style="padding: 0.75rem;">100%</button>
+                                <button class="btn-p rc-p-btn" data-p="105" style="padding: 0.75rem;">105%</button>
                                 <button class="btn-p rc-p-btn" data-p="110" style="padding: 0.75rem;">110%</button>
+                                <button class="btn-p rc-p-btn" data-p="115" style="padding: 0.75rem;">115%</button>
+                                <button class="btn-p rc-p-btn" data-p="120" style="padding: 0.75rem;">120%</button>
                             </div>
                         </div>
                         <table class="table">
@@ -268,11 +280,23 @@
                 </div>
                 <div class="main-calc">
                     <div class="table-card">
-                        <h2 id="bc-chart-title" style="font-weight: 800; margin-bottom: 0.5rem;">Puissance vs Vitesse</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 id="bc-chart-title" style="font-weight: 800; margin: 0;">Puissance vs Vitesse</h2>
+                            <div class="cat-bar" style="padding: 0; gap: 0.5rem; align-items: center;">
+                                <span style="font-size: 0.6rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Pente: <span id="bc-sl-val">0</span>%</span>
+                                <input type="range" id="bc-sl-slider" min="0" max="15" step="1" value="0" style="width: 80px; height: 4px; accent-color: var(--primary);">
+                            </div>
+                        </div>
                         <div class="chart" id="bc-chart"></div>
                     </div>
                     <div class="table-card">
-                        <h2 id="bc-chart-sl-title" style="font-weight: 800; margin-bottom: 0.5rem;">Puissance vs Pente</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 id="bc-chart-sl-title" style="font-weight: 800; margin: 0;">Puissance vs Pente</h2>
+                            <div class="cat-bar" style="padding: 0; gap: 0.5rem; align-items: center;">
+                                <span style="font-size: 0.6rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Vitesse: <span id="bc-s-val">20</span> km/h</span>
+                                <input type="range" id="bc-s-slider" min="5" max="50" step="1" value="20" style="width: 80px; height: 4px; accent-color: var(--primary);">
+                            </div>
+                        </div>
                         <div class="chart" id="bc-chart-sl"></div>
                     </div>
                 </div>
@@ -432,25 +456,100 @@ Inverse de la 1ère pyramide;;;;;;;;;;;
 "6x200m à 100% avec 30"" puis 25"" puis 20, 15 et 10s de récup.";;;;;;;;;;;
 3' de récup;;;;;;;;;;;
 2 x 600m à 80% with  1' de récup;;;;;;;;;;;
-"6x200m à 100% with 30"" puis 25"" puis 20, 15 et 10 de récup.";;;;;;;;;;;
 "Entraînement ""Moussien"" n°21";;;;;;;;;;;
-30' continu;;;;;;;;;;;
-1' /1'30/2'/2'30 recup 30s;;;;;;;;;;;
-200/300/400/500/600 recup 30s;;;;;;;;;;;
-1' /1'30/2'/2'30 recup 30s;;;;;;;;;;;
+10 x 400m à 100% VMA;;;;;;;;;;;
+récup 1' entre chaque;;;;;;;;;;;
 "Entraînement ""Moussien"" n°22";;;;;;;;;;;
-"2' à 80% avec 1'30"" de recup";;;;;;;;;;;
-4*200m à 100% avec 40s de recup;;;;;;;;;;;
-2'30s de recup;;;;;;;;;;;
-répéter 3 fois;;;;;;;;;;;
+2 séries de (5 x 200m à 105% VMA);;;;;;;;;;;
+récup 30" entre les 200m;;;;;;;;;;;
+3' entre les séries;;;;;;;;;;;
 "Entraînement ""Moussien"" n°23";;;;;;;;;;;
-"5' à 85% avec 1'00"" de recup";;;;;;;;;;;
-"4' à 90% avec 1' 30"" de recup";;;;;;;;;;;
-"3' à 100% avec 2'00"" de recup";;;;;;;;;;;
-2' à 100%;;;;;;;;;;;
-5*200m à 110% avec 40s de recup;;;;;;;;;;;
+Séance de côtes : 10 x 30" en côte;;;;;;;;;;;
+récup descente en marchant/trottant;;;;;;;;;;;
+"Entraînement ""Moussien"" n°24";;;;;;;;;;;
+3 x 2000m au seuil (85-90% VMA);;;;;;;;;;;
+récup 2' entre chaque;;;;;;;;;;;
+"Entraînement ""Moussien"" n°25";;;;;;;;;;;
+8 x 300m à 100% VMA;;;;;;;;;;;
+récup 45" entre chaque;;;;;;;;;;;
+"Entraînement ""Moussien"" n°26";;;;;;;;;;;
+Séance Pyramide : 200-400-600-800-600-400-200m;;;;;;;;;;;
+allure 95% VMA;;;;;;;;;;;
+récup 1' entre chaque;;;;;;;;;;;
+"Sortie Longue Endurance";;;;;;;;;;;
+1h15 à 70% VMA;;;;;;;;;;;
+"Footing de récupération";;;;;;;;;;;
+45' à 65% VMA;;;;;;;;;;;
+"Endurance Fondamentale";;;;;;;;;;;
+1h à 70% VMA;;;;;;;;;;;
+"Sortie Mixte";;;;;;;;;;;
+30' endurance + 3 x 5' à 80% VMA;;;;;;;;;;;
+récup 2' entre les blocs;;;;;;;;;;;
+"Endurance Active";;;;;;;;;;;
+50' à 75% VMA;;;;;;;;;;;
+"Sortie Longue avec Blocs";;;;;;;;;;;
+1h30 dont 2 x 15' à 80% VMA;;;;;;;;;;;
+récup 5' entre les blocs;;;;;;;;;;;
 "Entraînement ""Moussien"" n°51";;Le Mona Fartlek;;20' warm up;2 x 90s (seuil) / 90s rec;4 x 60s (10k) / 60s rec;4 x 30s (5k) / 30s rec;4 x 15s (max) / 15s rec;2 à 3 minutes de récupération et répétez ce cycle une seconde fois;10' cool down
-"Entraînement ""Moussien"" n°52";;4x4 Norvégien;;20' warm up;4 x 4 min (90-95% FC Max);3 min récup active (70% FC Max);15' cool down`;
+"Entraînement ""Moussien"" n°52";;4x4 Norvégien;;20' warm up;4 x 4 min (90-95% FC Max);3 min récup active (70% FC Max);15' cool down
+"Entraînement ""Moussien"" n°53";;VMA Courte (30/30);;20' warm up;2 séries de 10 x 30" à 100-105% VMA;30" de récupération entre les répétitions;3' de récupération entre les séries;10' cool down
+"Entraînement ""Moussien"" n°54";;VMA Longue (800m);;20' warm up;5 x 800m à 95% VMA;2' de récupération entre les répétitions;10' cool down
+"Entraînement ""Moussien"" n°55";;Seuil (3x10');;20' warm up;3 x 10 min à 85-88% FCM (allure semi-marathon);2' de récupération en footing;10' cool down
+"Entraînement ""Moussien"" n°56";;Côtes (VMA);;20' warm up;10 x 150m en côte (allure VMA);descente en récupération;10' cool down
+"Entraînement ""Moussien"" n°57";;Pyramide VMA;;20' warm up;200m-400m-600m-800m-600m-400m-200m à 95-100% VMA;récupération égale au temps d'effort;10' cool down
+"Entraînement ""Moussien"" n°58";;Seuil (2x15');;20' warm up;2 x 15 min à allure marathon;3' de récupération en footing;10' cool down
+"Entraînement ""Moussien"" n°59";;VMA Courte (200m);;20' warm up;2 séries de 8 x 200m à 105% VMA;récup 30" trot;3' entre les séries;10' cool down
+"Entraînement ""Moussien"" n°60";;Seuil (4x2000m);;20' warm up;4 x 2000m à 85% VMA;récup 2' trot;10' cool down
+"Entraînement ""Moussien"" n°61";;VMA Mixte;;20' warm up;1000m (90%) - 500m (95%) - 200m (100%);récup 2' / 1' / 30";répéter 3 fois;10' cool down
+"Entraînement ""Moussien"" n°62";;VMA (10x400m);;20' warm up;10 x 400m à 100% VMA;1' de récupération (trottiné);10' cool down
+"Entraînement ""Moussien"" n°63";;VMA (12x200m);;20' warm up;12 x 200m à 105% VMA;45" de récupération;10' cool down
+"Entraînement ""Moussien"" n°64";;Pyramide VMA;;20' warm up;200m-400m-600m-800m-600m-400m-200m à 100% VMA;récupération égale au temps d'effort;10' cool down
+"Entraînement ""Moussien"" n°65";;Seuil (3x2000m);;20' warm up;3 x 2000m à allure semi-marathon;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°66";;VMA (5x1000m);;20' warm up;5 x 1000m à 95% VMA;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°67";;Fartlek Nature;;20' warm up;10 x 1' effort soutenu / 1' récupération;10' cool down
+"Entraînement ""Moussien"" n°68";;Côtes (10x30");;20' warm up;10 x 30" en côte à bloc;descente en récupération;10' cool down
+"Entraînement ""Moussien"" n°69";;Seuil (2x15');;20' warm up;2 x 15 min à allure marathon;3' de récupération;10' cool down
+"Entraînement ""Moussien"" n°70";;VMA (15x300m);;20' warm up;15 x 300m à 100% VMA;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°71";;Mixte (VMA/Seuil);;20' warm up;5 x 400m (VMA) + 2 x 2000m (Seuil);2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°72";;VMA (20x200m);;20' warm up;20 x 200m à 105% VMA;30" de récupération;10' cool down
+"Entraînement ""Moussien"" n°73";;Seuil (4x2000m);;20' warm up;4 x 2000m à allure semi;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°74";;VMA (8x500m);;20' warm up;8 x 500m à 100% VMA;1'15 de récupération;10' cool down
+"Entraînement ""Moussien"" n°75";;Fartlek (2-3-4-3-2);;20' warm up;2'-3'-4'-3'-2' effort seuil / 1'30 récupération;10' cool down
+"Entraînement ""Moussien"" n°76";;VMA (2 séries de 8x300m);;20' warm up;2 x (8 x 300m) à 100% VMA;1' de récupération / 3' entre séries;10' cool down
+"Entraînement ""Moussien"" n°77";;Seuil (10x800m);;20' warm up;10 x 800m à allure 10km;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°78";;VMA (12x400m);;20' warm up;12 x 400m à 100% VMA;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°79";;Seuil (5x1500m);;20' warm up;5 x 1500m à allure semi;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°80";;VMA (3 séries de 10x200m);;20' warm up;3 x (10 x 200m) à 105% VMA;30" de récupération / 3' entre séries;10' cool down
+"Entraînement ""Moussien"" n°81";;Seuil (3x3000m);;20' warm up;3 x 3000m à allure marathon;3' de récupération;10' cool down
+"Entraînement ""Moussien"" n°82";;VMA (6x1000m);;20' warm up;6 x 1000m à 95% VMA;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°83";;Fartlek (10x2');;20' warm up;10 x 2' effort seuil / 1' récupération;10' cool down
+"Entraînement ""Moussien"" n°84";;VMA (10x500m);;20' warm up;10 x 500m à 100% VMA;1'30 de récupération;10' cool down
+"Entraînement ""Moussien"" n°85";;Seuil (2x20');;20' warm up;2 x 20 min à allure marathon;4' de récupération;10' cool down
+"Entraînement ""Moussien"" n°86";;VMA (2 séries de 12x30/30);;20' warm up;2 x (12 x 30"/30") à 105% VMA;3' entre séries;10' cool down
+"Entraînement ""Moussien"" n°87";;Seuil (6x1000m);;20' warm up;6 x 1000m à allure 10km;1'30 de récupération;10' cool down
+"Entraînement ""Moussien"" n°88";;VMA (8x600m);;20' warm up;8 x 600m à 98% VMA;1'45 de récupération;10' cool down
+"Entraînement ""Moussien"" n°89";;Seuil (3x4000m);;20' warm up;3 x 4000m à allure marathon;4' de récupération;10' cool down
+"Entraînement ""Moussien"" n°90";;VMA (10x300m + 5x600m);;20' warm up;10 x 300m + 5 x 600m à 100% VMA;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°91";;Seuil (2x5000m);;20' warm up;2 x 5000m à allure marathon;5' de récupération;10' cool down
+"Entraînement ""Moussien"" n°92";;VMA (20x400m);;20' warm up;20 x 400m à 95% VMA;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°93";;Seuil (15x400m);;20' warm up;15 x 400m à allure 5km;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°94";;VMA (10x800m);;20' warm up;10 x 800m à 92% VMA;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°95";;Seuil (4x3000m);;20' warm up;4 x 3000m à allure semi;3' de récupération;10' cool down
+"Entraînement ""Moussien"" n°96";;VMA (2 séries de 10x400m);;20' warm up;2 x (10 x 400m) à 95% VMA;1' de récupération / 4' entre séries;10' cool down
+"Entraînement ""Moussien"" n°97";;Seuil (6x2000m);;20' warm up;6 x 2000m à allure marathon;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°98";;VMA (12x500m);;20' warm up;12 x 500m à 100% VMA;1'30 de récupération;10' cool down
+"Entraînement ""Moussien"" n°99";;Seuil (8x1000m);;20' warm up;8 x 1000m à allure 10km;1'30 de récupération;10' cool down
+"Entraînement ""Moussien"" n°100";;VMA (15x400m);;20' warm up;15 x 400m à 100% VMA;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°101";;Seuil (3x5000m);;20' warm up;3 x 5000m à allure marathon;5' de récupération;10' cool down
+"Entraînement ""Moussien"" n°102";;VMA (20x300m);;20' warm up;20 x 300m à 100% VMA;1' de récupération;10' cool down
+"Entraînement ""Moussien"" n°103";;Seuil (10x1000m);;20' warm up;10 x 1000m à allure 10km;1'30 de récupération;10' cool down
+"Entraînement ""Moussien"" n°104";;VMA (10x1000m);;20' warm up;10 x 1000m à 90% VMA;2' de récupération;10' cool down
+"Entraînement ""Moussien"" n°105";;VMA (Pyramide 1-2-3-4-3-2-1);;20' warm up;1'-2'-3'-4'-3'-2'-1' à 95% VMA;récupération égale à l'effort;10' cool down
+"Entraînement ""Moussien"" n°106";;Seuil (2x20' allure marathon);;20' warm up;2 x 20 min à allure marathon;5' de récupération;10' cool down
+"Entraînement ""Moussien"" n°107";;VMA (3 séries de 8x200m);;20' warm up;3 x (8 x 200m) à 105% VMA;30" récup / 3' entre séries;10' cool down
+"Entraînement ""Moussien"" n°108";;Mixte (VMA + Seuil);;20' warm up;6 x 400m (VMA) + 15 min (Seuil);1' récup / 3' entre blocs;10' cool down
+"Entraînement ""Moussien"" n°109";;VMA (10x500m);;20' warm up;10 x 500m à 100% VMA;1'15 de récupération;10' cool down
+"Entraînement ""Moussien"" n°110";;Seuil (4x10' allure semi);;20' warm up;4 x 10 min à allure semi-marathon;2' de récupération;10' cool down`;
 
         const BIKE_DATA = [
             { id: 'b1', title: 'La vélocité', category: 'Vélocité', desc: 'Coordination et vitesse de pédalage.', details: ['3-4x série:', '10 min > 100-110 rpm', '1-2 min accélération progressive', 'Récup 5 min'] },
@@ -471,8 +570,8 @@ répéter 3 fois;;;;;;;;;;;
         ];
 
         let state = {
-            v: 'run',
-            runF: { q: '', d: 10000, t: 90, c: 'Tous' },
+            v: 'intervals',
+            intF: { q: '', d: 15000, t: 120, c: 'Tous' },
             bikeF: { c: 'Tous', ftp: 230 },
             rc: { age: 62, rhr: 52, vma: 13.4, p: 100 },
             bc: { w: 85, p: 105, sl: 0, s: 20, m: 's' },
@@ -490,22 +589,50 @@ répéter 3 fois;;;;;;;;;;;
             lines.forEach(l => {
                 if (!l.trim()) return;
                 const cols = l.split(';').map(c => c.replace(/^"|"$/g, '').trim());
-                const isM = cols[0].toLowerCase().includes('entraînement') && cols[0].toLowerCase().includes('moussien');
-                const isS = cols[2] && (cols[2].includes('Sisyphus') || cols[2].includes('Mona') || cols[2].includes('4x4'));
+                const c0 = cols[0].toLowerCase();
+                const c2 = (cols[2] || '').toLowerCase();
+                const isM = c0.includes('entraînement') && c0.includes('moussien');
+                const isS = c2.includes('sisyphus') || c2.includes('mona') || c2.includes('4x4') || c2.includes('vma') || c2.includes('seuil') || 
+                            c0.includes('sortie') || c0.includes('endurance') || c0.includes('footing') || c0.includes('mixte');
                 if (isM || isS) {
                     if (curr) workouts.push(curr);
-                    curr = { id: 'w'+workouts.length, title: isS ? cols[2] : cols[0], steps: [], category: 'Mixte' };
+                    let title = cols[0];
+                    if (cols[2] && cols[2].trim()) {
+                        title = cols[2];
+                    }
+                    if (title.startsWith('Moussien: ')) {
+                        title = title.replace('Moussien: ', '');
+                    }
+                    curr = { id: 'w'+workouts.length, title, steps: [], category: 'Mixte', isM };
                     for (let i = 4; i < cols.length; i++) if (cols[i]) curr.steps.push(cols[i]);
                 } else if (curr && cols[0]) curr.steps.push(cols[0]);
             });
             if (curr) workouts.push(curr);
             return workouts.map(w => {
                 const m = calcMetrics(w.steps);
-                const t = w.steps.join(' ').toLowerCase();
+                const t = (w.title + ' ' + w.steps.join(' ')).toLowerCase();
                 let c = 'Mixte';
-                if (t.includes('100%') || t.includes('vma')) c = 'VMA';
-                else if (t.includes('85%') || t.includes('seuil')) c = 'Seuil';
-                else if (t.includes('80%') || t.includes('endurance')) c = 'Endurance';
+                
+                // 1. Phares
+                if (t.includes('mona') || t.includes('4x4') || t.includes('sisyphus')) {
+                    c = 'Phares';
+                }
+                // 2. Generic VMA/Seuil
+                else if (t.includes('100%') || t.includes('vma') || t.includes('30/30') || t.includes('fractionné')) {
+                    c = 'VMA';
+                }
+                else if (t.includes('85%') || t.includes('seuil') || t.includes('allure 10km') || t.includes('allure semi')) {
+                    c = 'Seuil';
+                }
+                // 3. Endurance (Check before Moussien to catch endurance-based Moussiens)
+                else if (t.includes('80%') || t.includes('endurance') || t.includes('footing') || t.includes('sortie longue')) {
+                    c = 'Endurance';
+                }
+                // 4. Specific Moussien
+                else if (w.isM) {
+                    c = 'Moussien';
+                }
+                
                 return { ...w, category: c, ...m };
             });
         }
@@ -516,6 +643,19 @@ répéter 3 fois;;;;;;;;;;;
                 const l = s.toLowerCase();
                 const isR = l.includes('récup') || l.includes('repos') || l.includes('jog');
                 const m = (l.match(/(\d+)\s*[x\*]/) || [0, 1])[1];
+                
+                // Handle hours: 1h15, 1h, etc.
+                const hourMatch = l.match(/(\d+)\s*h\s*(\d+)?/);
+                if (hourMatch) {
+                    const hrs = parseInt(hourMatch[1]);
+                    const mins = parseInt(hourMatch[2] || 0);
+                    const totalMins = (hrs * 60 + mins) * m;
+                    t += totalMins;
+                    d += totalMins * (isR ? 166 : 250);
+                    if (!isR) id += totalMins * 250;
+                    return;
+                }
+
                 const dist = l.match(/(\d+)\s*(m|km)/);
                 if (dist) {
                     const v = parseInt(dist[1]) * (dist[2] === 'km' ? 1000 : 1) * m;
@@ -545,18 +685,19 @@ répéter 3 fois;;;;;;;;;;;
             `).join('') + `<div class="row" style="background:#f1f5f9;padding:0.5rem;border-radius:0.5rem;margin-top:0.5rem;"><span class="row-l">MAX</span><span class="row-v">${mhr} BPM</span></div>`;
             $('#rc-times').innerHTML = [200, 400, 800, 1000].map(d => {
                 const s = d / (spd / 3.6);
-                let sub = '';
+                let rows = `<tr><td>${d}m</td><td class="row-v">${Math.floor(s/60)}:${Math.round(s%60).toString().padStart(2, '0')}</td></tr>`;
+                
                 if (d === 200) {
                     const s193 = 193 / (spd / 3.6);
-                    sub = `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">193m: ${Math.floor(s193/60)}:${Math.round(s193%60).toString().padStart(2, '0')}</div>`;
+                    rows += `<tr style="background: #f8fafc; font-size: 0.8rem;"><td style="padding-left: 1.5rem; color: var(--text-muted);">↳ 193m</td><td class="row-v" style="color: var(--text-muted);">${Math.floor(s193/60)}:${Math.round(s193%60).toString().padStart(2, '0')}</td></tr>`;
                 } else if (d === 400) {
                     const s386 = 386 / (spd / 3.6);
-                    sub = `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">386m: ${Math.floor(s386/60)}:${Math.round(s386%60).toString().padStart(2, '0')}</div>`;
+                    rows += `<tr style="background: #f8fafc; font-size: 0.8rem;"><td style="padding-left: 1.5rem; color: var(--text-muted);">↳ 386m</td><td class="row-v" style="color: var(--text-muted);">${Math.floor(s386/60)}:${Math.round(s386%60).toString().padStart(2, '0')}</td></tr>`;
                 } else if (d === 800) {
                     const s772 = 772 / (spd / 3.6);
-                    sub = `<div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">772m: ${Math.floor(s772/60)}:${Math.round(s772%60).toString().padStart(2, '0')}</div>`;
+                    rows += `<tr style="background: #f8fafc; font-size: 0.8rem;"><td style="padding-left: 1.5rem; color: var(--text-muted);">↳ 772m</td><td class="row-v" style="color: var(--text-muted);">${Math.floor(s772/60)}:${Math.round(s772%60).toString().padStart(2, '0')}</td></tr>`;
                 }
-                return `<tr><td>${d}m ${sub}</td><td class="row-v">${Math.floor(s/60)}:${Math.round(s%60).toString().padStart(2, '0')}</td></tr>`;
+                return rows;
             }).join('');
             $('#rc-races').innerHTML = [{l:'5K',d:5000,p:90},{l:'10K',d:10000,p:88},{l:'Semi',d:21097,p:85},{l:'Marathon',d:42195,p:80}].map(r => {
                 const s = vma * (r.p / 100), sec = r.d / (s / 3.6);
@@ -583,7 +724,7 @@ répéter 3 fois;;;;;;;;;;;
             const { w, p, sl, s, m } = state.bc;
             if (m === 's') {
                 const res = bikePhys(p, sl, w, 0, 's');
-                $('#bc-s').value = res.toFixed(1);
+                $('#bc-s').value = Math.round(res);
                 state.bc.s = res;
             } else {
                 const res = bikePhys(0, sl, w, s, 'p');
@@ -592,6 +733,11 @@ répéter 3 fois;;;;;;;;;;;
             }
             renderBikeChart();
             renderBikeSlopeChart();
+            
+            $('#bc-sl-slider').value = Math.round(state.bc.sl);
+            $('#bc-sl-val').innerText = Math.round(state.bc.sl);
+            $('#bc-s-slider').value = Math.round(state.bc.s);
+            $('#bc-s-val').innerText = Math.round(state.bc.s);
         }
 
         function showTooltip(e, text) {
@@ -601,13 +747,39 @@ répéter 3 fois;;;;;;;;;;;
             tip.style.left = (e.clientX + 10) + 'px';
             tip.style.top = (e.clientY - 30) + 'px';
         }
-        function hideTooltip() { $('#chart-tooltip').style.display = 'none'; }
+        function hideTooltip() { 
+            $('#chart-tooltip').style.display = 'none'; 
+            $$('[id$="-v-line"]').forEach(l => l.setAttribute('x1', '-100'));
+        }
+
+        function handleChartMove(e, chartId, xKey, yKey, data, maxY, xUnit, yUnit) {
+            const svg = e.currentTarget;
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX;
+            pt.y = e.clientY;
+            const cursor = pt.matrixTransform(svg.getScreenCTM().inverse());
+            
+            const x = cursor.x;
+            if (x < 0 || x > 400) return;
+
+            const idx = Math.round((x / 400) * (data.length - 1));
+            const d = data[idx];
+            if (!d) return;
+
+            const line = $(`#${chartId}-v-line`);
+            if (line) {
+                line.setAttribute('x1', x);
+                line.setAttribute('x2', x);
+            }
+
+            showTooltip(e, `${d[xKey]}${xUnit}: ${Math.round(d[yKey])}${yUnit}`);
+        }
 
         function renderBikeChart() {
             const { sl, w } = state.bc;
-            const data = []; for (let s = 10; s <= 40; s += 5) data.push({ s, p: bikePhys(0, sl, w, s, 'p') });
+            const data = []; for (let s = 10; s <= 40; s += 1) data.push({ s, p: bikePhys(0, sl, w, s, 'p') });
             const maxP = Math.max(...data.map(d => d.p), 1);
-            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;">`;
+            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;" onmousemove="handleChartMove(event, 'bc-chart', 's', 'p', ${JSON.stringify(data).replace(/"/g, '&quot;')}, ${maxP}, ' km/h', 'W')" onmouseleave="hideTooltip()">`;
             
             for (let i = 0; i <= 5; i++) {
                 const y = 200 - (i / 5) * 180;
@@ -618,48 +790,25 @@ répéter 3 fois;;;;;;;;;;;
 
             svg += `<path class="chart-area" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + ` L 400 200 Z" />`;
             svg += `<path class="chart-line" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + `" />`;
+            
+            svg += `<line id="bc-chart-v-line" x1="-100" y1="0" x2="-100" y2="200" stroke="var(--primary)" stroke-width="1" stroke-dasharray="4" />`;
+
             data.forEach((d, i) => {
-                const x = (i / (data.length-1)) * 400;
-                const y = 200 - (d.p / maxP) * 180;
-                svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.s}</text>`;
-                svg += `<circle cx="${x}" cy="${y}" r="5" class="chart-dot" onmousemove="showTooltip(event, '${d.s} km/h: ${Math.round(d.p)}W')" onmouseleave="hideTooltip()" />`;
+                if (d.s % 5 === 0) {
+                    const x = (i / (data.length-1)) * 400;
+                    svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.s}</text>`;
+                }
             });
             svg += `</svg>`;
             $('#bc-chart').innerHTML = svg;
             $('#bc-chart-title').innerText = `Puissance (W) par Vitesse (km/h) à ${sl}%`;
         }
 
-        function renderBikeSpeedChart() {
-            const { sl, w } = state.bc;
-            const data = []; for (let p = 50; p <= 400; p += 50) data.push({ p, s: bikePhys(p, sl, w, 0, 's') });
-            const maxS = Math.max(...data.map(d => d.s), 1);
-            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;">`;
-            
-            for (let i = 0; i <= 5; i++) {
-                const y = 200 - (i / 5) * 180;
-                const val = ((i / 5) * maxS).toFixed(1);
-                svg += `<line x1="0" y1="${y}" x2="400" y2="${y}" stroke="#f1f5f9" stroke-width="1" />`;
-                svg += `<text x="-5" y="${y + 4}" class="chart-label" text-anchor="end">${val}</text>`;
-            }
-
-            svg += `<path class="chart-area" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.s / maxS) * 180}`).join(' ') + ` L 400 200 Z" />`;
-            svg += `<path class="chart-line" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.s / maxS) * 180}`).join(' ') + `" />`;
-            data.forEach((d, i) => {
-                const x = (i / (data.length-1)) * 400;
-                const y = 200 - (d.s / maxS) * 180;
-                svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.p}W</text>`;
-                svg += `<circle cx="${x}" cy="${y}" r="5" class="chart-dot" onmousemove="showTooltip(event, '${d.p}W: ${d.s.toFixed(1)} km/h')" onmouseleave="hideTooltip()" />`;
-            });
-            svg += `</svg>`;
-            $('#bc-chart-v').innerHTML = svg;
-            $('#bc-chart-v-title').innerText = `Vitesse (km/h) par Puissance (W) à ${sl}%`;
-        }
-
         function renderBikeSlopeChart() {
             const { s, w } = state.bc;
             const data = []; for (let sl = 0; sl <= 15; sl += 1) data.push({ sl, p: bikePhys(0, sl, w, s, 'p') });
             const maxP = Math.max(...data.map(d => d.p), 1);
-            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;">`;
+            let svg = `<svg viewBox="-40 -20 460 240" style="width:100%; height:100%; overflow:visible;" onmousemove="handleChartMove(event, 'bc-chart-sl', 'sl', 'p', ${JSON.stringify(data).replace(/"/g, '&quot;')}, ${maxP}, '%', 'W')" onmouseleave="hideTooltip()">`;
             
             for (let i = 0; i <= 5; i++) {
                 const y = 200 - (i / 5) * 180;
@@ -670,13 +819,14 @@ répéter 3 fois;;;;;;;;;;;
 
             svg += `<path class="chart-area" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + ` L 400 200 Z" />`;
             svg += `<path class="chart-line" d="M 0 200 ` + data.map((d, i) => `L ${(i / (data.length-1)) * 400} ${200 - (d.p / maxP) * 180}`).join(' ') + `" />`;
+            
+            svg += `<line id="bc-chart-sl-v-line" x1="-100" y1="0" x2="-100" y2="200" stroke="var(--primary)" stroke-width="1" stroke-dasharray="4" />`;
+
             data.forEach((d, i) => {
-                const x = (i / (data.length-1)) * 400;
-                const y = 200 - (d.p / maxP) * 180;
                 if (d.sl % 2 === 0 || d.sl === 15) {
+                    const x = (i / (data.length-1)) * 400;
                     svg += `<text x="${x}" y="220" class="chart-label" text-anchor="middle">${d.sl}%</text>`;
                 }
-                svg += `<circle cx="${x}" cy="${y}" r="4" class="chart-dot" onmousemove="showTooltip(event, '${d.sl}%: ${Math.round(d.p)}W')" onmouseleave="hideTooltip()" />`;
             });
             svg += `</svg>`;
             $('#bc-chart-sl').innerHTML = svg;
@@ -684,11 +834,16 @@ répéter 3 fois;;;;;;;;;;;
         }
 
         // --- Rendering ---
-        function renderRun() {
-            const grid = $('#run-grid');
+        function renderIntervals() {
+            const grid = $('#intervals-grid');
             const filtered = state.workouts.filter(w => {
-                const f = state.runF;
-                return (f.c === 'Tous' || w.category === f.c) && (w.dist <= f.d) && (w.time <= f.t) && (w.title.toLowerCase().includes(f.q.toLowerCase()));
+                const f = state.intF;
+                
+                const searchMatch = w.title.toLowerCase().includes(f.q.toLowerCase());
+                const metricsMatch = (w.dist <= f.d) && (w.time <= f.t);
+                const catMatch = (f.c === 'Tous' || w.category === f.c);
+                
+                return catMatch && metricsMatch && searchMatch;
             });
             grid.innerHTML = filtered.map(w => `
                 <div class="card" onclick="openModal('${w.id}')">
@@ -699,7 +854,7 @@ répéter 3 fois;;;;;;;;;;;
                         <div class="m-box"><div class="m-label">Temps</div><div class="m-val">${w.time} min</div></div>
                     </div>
                     <div class="card-steps">
-                        ${w.steps.slice(0, 2).map(s => `<div class="step"><div class="dot"></div><span>${s}</span></div>`).join('')}
+                        ${w.steps.slice(0, 3).map(s => `<div class="step"><div class="dot"></div><span>${s}</span></div>`).join('')}
                     </div>
                 </div>
             `).join('');
@@ -776,33 +931,38 @@ répéter 3 fois;;;;;;;;;;;
             $$('.nav-btn').forEach(x => x.classList.remove('active'));
             b.classList.add('active');
             $$('.view').forEach(v => v.classList.add('hidden'));
-            $('#v-' + b.dataset.v).classList.remove('hidden');
+            const targetView = $('#v-' + b.dataset.v);
+            if (targetView) targetView.classList.remove('hidden');
             state.v = b.dataset.v;
+            if (state.v === 'intervals') renderIntervals();
             if (state.v === 'bike') renderBike();
             if (state.v === 'r-calc') updateRunCalc();
             if (state.v === 'b-calc') updateBikeCalc();
         });
 
-        $('#run-q').oninput = e => { state.runF.q = e.target.value; renderRun(); };
-        $('#run-d').oninput = e => { state.runF.d = parseInt(e.target.value); $('#dist-txt').innerText = (state.runF.d/1000).toFixed(1) + ' km'; renderRun(); };
-        $('#run-t').oninput = e => { state.runF.t = parseInt(e.target.value); $('#time-txt').innerText = state.runF.t + ' min'; renderRun(); };
-        $('#run-reset').onclick = () => { state.runF = { q: '', d: 10000, t: 90, c: 'Tous' }; $('#run-q').value = ''; $('#run-d').value = 10000; $('#run-t').value = 90; $('#dist-txt').innerText = '10.0 km'; $('#time-txt').innerText = '90 min'; $$('#run-cats .cat-btn').forEach(b => b.classList.toggle('active', b.dataset.c === 'Tous')); renderRun(); };
-        $('#run-cats').onclick = e => { if (e.target.dataset.c) { $$('#run-cats .cat-btn').forEach(b => b.classList.remove('active')); $$('#run-specials .cat-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); state.runF.c = e.target.dataset.c; state.runF.q = ''; $('#run-q').value = ''; renderRun(); } };
-        $('#run-specials').onclick = e => { 
+        $('#bike-ftp').oninput = e => { state.bikeF.ftp = parseInt(e.target.value) || 0; renderBike(); };
+        
+        $('#int-q').oninput = e => { state.intF.q = e.target.value; renderIntervals(); };
+        $('#int-d').oninput = e => { state.intF.d = parseInt(e.target.value); $('#int-dist-txt').innerText = (state.intF.d/1000).toFixed(1) + ' km'; renderIntervals(); };
+        $('#int-t').oninput = e => { state.intF.t = parseInt(e.target.value); $('#int-time-txt').innerText = state.intF.t + ' min'; renderIntervals(); };
+        $('#int-reset').onclick = () => { state.intF = { q: '', d: 15000, t: 120, c: 'Tous' }; $('#int-q').value = ''; $('#int-d').value = 15000; $('#int-t').value = 120; $('#int-dist-txt').innerText = '15.0 km'; $('#int-time-txt').innerText = '120 min'; $$('#int-cats .cat-btn').forEach(b => b.classList.toggle('active', b.dataset.c === 'Tous')); $$('#int-specials .cat-btn').forEach(b => b.classList.remove('active')); renderIntervals(); };
+        $('#int-cats').onclick = e => { if (e.target.dataset.c) { $$('#int-cats .cat-btn').forEach(b => b.classList.remove('active')); $$('#int-specials .cat-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); state.intF.c = e.target.dataset.c; state.intF.q = ''; $('#int-q').value = ''; renderIntervals(); } };
+        $('#int-specials').onclick = e => { 
             if (e.target.dataset.s) { 
-                $$('#run-cats .cat-btn').forEach(b => b.classList.remove('active')); 
-                $$('#run-specials .cat-btn').forEach(b => b.classList.remove('active')); 
+                $$('#int-cats .cat-btn').forEach(b => b.classList.remove('active')); 
+                $$('#int-specials .cat-btn').forEach(b => b.classList.remove('active')); 
                 e.target.classList.add('active'); 
                 const q = e.target.dataset.s === 'Mona' ? 'Le Mona Fartlek' : e.target.dataset.s;
-                state.runF = { q: q, d: 15000, t: 120, c: 'Tous' }; 
-                $('#run-q').value = q; 
-                $('#run-d').value = 15000;
-                $('#run-t').value = 120;
-                $('#dist-txt').innerText = '15.0 km';
-                $('#time-txt').innerText = '120 min';
-                renderRun(); 
+                state.intF = { q: q, d: 15000, t: 120, c: 'Tous' }; 
+                $('#int-q').value = q; 
+                $('#int-d').value = 15000;
+                $('#int-t').value = 120;
+                $('#int-dist-txt').innerText = '15.0 km';
+                $('#int-time-txt').innerText = '120 min';
+                renderIntervals();
             } 
         };
+
         $('#bike-cats').onclick = e => { if (e.target.dataset.c) { $$('#bike-cats .cat-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); state.bikeF.c = e.target.dataset.c; renderBike(); } };
         $('#bike-ftp').oninput = e => { state.bikeF.ftp = parseInt(e.target.value) || 0; renderBike(); };
 
@@ -821,6 +981,20 @@ répéter 3 fois;;;;;;;;;;;
         
         $$('.rc-p-btn').forEach(b => b.onclick = () => syncRCP(parseInt(b.dataset.p)));
 
+        $('#bc-sl-slider').oninput = e => {
+            state.bc.sl = parseFloat(e.target.value);
+            $('#bc-sl').value = state.bc.sl;
+            state.bc.m = 's';
+            updateBikeCalc();
+        };
+
+        $('#bc-s-slider').oninput = e => {
+            state.bc.s = parseFloat(e.target.value);
+            $('#bc-s').value = state.bc.s;
+            state.bc.m = 'p';
+            updateBikeCalc();
+        };
+
         ['w', 'p', 'sl', 's'].forEach(id => $('#bc-'+id).oninput = e => { state.bc[id] = parseFloat(e.target.value); state.bc.m = (id === 'p' || id === 'sl') ? 's' : 'p'; updateBikeCalc(); });
 
         $$('.close').forEach(b => b.onclick = () => { $('#modal-bg').style.display = 'none'; document.body.classList.remove('no-scroll'); });
@@ -828,8 +1002,10 @@ répéter 3 fois;;;;;;;;;;;
 
         // --- Init ---
         state.workouts = parseCSV(RAW_CSV);
-        renderRun();
+        renderIntervals();
         renderBike();
+        updateRunCalc();
+        updateBikeCalc();
     </script>
 </body>
 </html>
