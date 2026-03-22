@@ -123,6 +123,7 @@
                 <button class="nav-btn" data-v="bike">Vélo</button>
                 <button class="nav-btn" data-v="r-calc">RunCalc</button>
                 <button class="nav-btn" data-v="b-calc">BikeCalc</button>
+                <button class="nav-btn" data-v="p-calc">Pression</button>
             </nav>
         </div>
     </header>
@@ -163,6 +164,67 @@
                 </div>
             </div>
             <div class="grid" id="intervals-grid"></div>
+        </div>
+
+        <!-- Tire Pressure View -->
+        <div id="v-p-calc" class="view hidden">
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <div class="card">
+                    <h3 class="card-title">Paramètres</h3>
+                    
+                    <div class="f-group" style="margin-bottom: 1.5rem;">
+                        <label class="f-label">Poids (Cycliste + Vélo) : <span id="pc-w-val">85</span> kg</label>
+                        <input type="range" id="pc-w" min="50" max="150" step="1" value="85">
+                    </div>
+
+                    <div class="f-group" style="margin-bottom: 1.5rem;">
+                        <label class="f-label">Diamètre de roue</label>
+                        <div class="cat-bar" id="pc-d-bar" style="padding: 0; margin-top: 0.5rem;">
+                            <button class="cat-btn active" data-d="700c">700c</button>
+                            <button class="cat-btn" data-d="27.5">27.5"</button>
+                        </div>
+                    </div>
+
+                    <div class="f-group" style="margin-bottom: 1.5rem;">
+                        <label class="f-label">Section du pneu : <span id="pc-wid-val">32 mm</span></label>
+                        <input type="range" id="pc-wid" min="25" max="50" step="1" value="32">
+                    </div>
+
+                    <div class="f-group" style="margin-bottom: 1.5rem;">
+                        <label class="f-label">Type de montage</label>
+                        <div class="cat-bar" id="pc-t-bar" style="padding: 0; margin-top: 0.5rem;">
+                            <button class="cat-btn active" data-t="tube">Chambre à air</button>
+                            <button class="cat-btn" data-t="tubeless">Tubeless</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Pression Recommandée</h3>
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;">
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 1rem; text-align: center; border: 1px solid #e2e8f0;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Roue Avant</div>
+                            <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); line-height: 1;">
+                                <span id="pc-front-bar">3.60</span> <span style="font-size: 1.25rem;">Bar</span>
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: #94a3b8; margin-top: 0.25rem;">
+                                <span id="pc-front-psi">52</span> PSI
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 1rem; text-align: center; border: 1px solid #e2e8f0;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Roue Arrière</div>
+                            <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); line-height: 1;">
+                                <span id="pc-rear-bar">4.00</span> <span style="font-size: 1.25rem;">Bar</span>
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: #94a3b8; margin-top: 0.25rem;">
+                                <span id="pc-rear-psi">58</span> PSI
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin-top: 1.5rem;">Valeurs indicatives. Ajustez selon le terrain et vos préférences.</p>
+                </div>
+            </div>
         </div>
 
         <!-- Cycling View -->
@@ -575,6 +637,7 @@ récup 5' entre les blocs;;;;;;;;;;;
             bikeF: { c: 'Tous', ftp: 230 },
             rc: { age: 62, rhr: 52, vma: 13.4, p: 100 },
             bc: { w: 85, p: 105, sl: 0, s: 20, m: 's' },
+            pc: { w: 85, d: '700c', wid: 32, t: 'tube' },
             workouts: []
         };
 
@@ -775,6 +838,29 @@ récup 5' entre les blocs;;;;;;;;;;;
             showTooltip(e, `${d[xKey]}${xUnit}: ${Math.round(d[yKey])}${yUnit}`);
         }
 
+        function updatePressureCalc() {
+            const { w, d, wid, t } = state.pc;
+            
+            $('#pc-w-val').innerText = w;
+            $('#pc-wid-val').innerText = d === '700c' ? `${wid} mm` : `${wid.toFixed(2)}"`;
+            
+            const width_mm = d === '700c' ? wid : wid * 25.4;
+            
+            let base_bar = (w / 85) * Math.pow(25 / width_mm, 1.5) * 5.5;
+            
+            if (t === 'tubeless') {
+                base_bar *= 0.85;
+            }
+            
+            const front_bar = base_bar * 0.94;
+            const rear_bar = base_bar * 1.06;
+            
+            $('#pc-front-bar').innerText = front_bar.toFixed(2);
+            $('#pc-front-psi').innerText = Math.round(front_bar * 14.5038);
+            $('#pc-rear-bar').innerText = rear_bar.toFixed(2);
+            $('#pc-rear-psi').innerText = Math.round(rear_bar * 14.5038);
+        }
+
         function renderBikeChart() {
             const { sl, w } = state.bc;
             const data = []; for (let s = 10; s <= 40; s += 1) data.push({ s, p: bikePhys(0, sl, w, s, 'p') });
@@ -938,7 +1024,43 @@ récup 5' entre les blocs;;;;;;;;;;;
             if (state.v === 'bike') renderBike();
             if (state.v === 'r-calc') updateRunCalc();
             if (state.v === 'b-calc') updateBikeCalc();
+            if (state.v === 'p-calc') updatePressureCalc();
         });
+
+        $('#pc-w').oninput = e => { state.pc.w = parseFloat(e.target.value); updatePressureCalc(); };
+        $('#pc-wid').oninput = e => { state.pc.wid = parseFloat(e.target.value); updatePressureCalc(); };
+        
+        $('#pc-d-bar').onclick = e => {
+            if (e.target.dataset.d) {
+                $$('#pc-d-bar .cat-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.pc.d = e.target.dataset.d;
+                
+                const widInput = $('#pc-wid');
+                if (state.pc.d === '700c') {
+                    widInput.min = 25;
+                    widInput.max = 50;
+                    widInput.step = 1;
+                    state.pc.wid = 32;
+                } else {
+                    widInput.min = 0.8;
+                    widInput.max = 2.75;
+                    widInput.step = 0.05;
+                    state.pc.wid = 2.0;
+                }
+                widInput.value = state.pc.wid;
+                updatePressureCalc();
+            }
+        };
+
+        $('#pc-t-bar').onclick = e => {
+            if (e.target.dataset.t) {
+                $$('#pc-t-bar .cat-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.pc.t = e.target.dataset.t;
+                updatePressureCalc();
+            }
+        };
 
         $('#bike-ftp').oninput = e => { state.bikeF.ftp = parseInt(e.target.value) || 0; renderBike(); };
         
@@ -1006,6 +1128,7 @@ récup 5' entre les blocs;;;;;;;;;;;
         renderBike();
         updateRunCalc();
         updateBikeCalc();
+        updatePressureCalc();
     </script>
 </body>
 </html>
